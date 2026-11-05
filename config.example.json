@@ -1,0 +1,7 @@
+{
+  "token": "YOUR_BOT_TOKEN",
+  "clientId": "YOUR_APPLICATION_ID",
+  "devGuildId": "",
+  "databasePath": "data/aura.db",
+  "ownerIds": []
+}

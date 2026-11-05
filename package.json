@@ -1,0 +1,29 @@
+{
+  "name": "aura-standalone",
+  "version": "1.0.0",
+  "description": "Aura Standalone: a self-hosted Discord bot with Aura's core moderation, security, community and engagement features.",
+  "author": "IamZach",
+  "license": "MIT",
+  "homepage": "https://github.com/1amZach/aura-standalone",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node --no-warnings=ExperimentalWarning dist/index.js",
+    "dev": "tsx --no-warnings=ExperimentalWarning src/index.ts",
+    "deploy-commands": "node --no-warnings=ExperimentalWarning dist/deploy.js",
+    "typecheck": "tsc -p . --noEmit",
+    "test": "tsx --no-warnings=ExperimentalWarning --test test/*.test.ts"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

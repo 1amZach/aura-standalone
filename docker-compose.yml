@@ -1,0 +1,10 @@
+services:
+  aura:
+    build: .
+    restart: unless-stopped
+    environment:
+      AURA_TOKEN: ${AURA_TOKEN}
+      AURA_CLIENT_ID: ${AURA_CLIENT_ID}
+      # AURA_DEV_GUILD_ID: ""   # register commands to one server instantly while testing
+    volumes:
+      - ./data:/app/data
