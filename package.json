@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aura Standalone: a self-hosted Discord bot with Aura's core moderation, security, community and engagement features.",
   "author": "IamZach",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/1amZach/aura-standalone",
   "private": true,
   "type": "module",

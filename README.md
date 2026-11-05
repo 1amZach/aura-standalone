@@ -142,4 +142,8 @@ Questions, bugs, ideas: join AGN at https://discord.gg/agn or open an issue here
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT with an attribution clause. See [LICENSE](LICENSE).
+
+Short version: use it, change it, host it, share it. Just keep the credits. `/about`, `/support` and the "built by IamZach" footer have to stay, and so does the AGN support link. Add your own name next to them if you like. If the credits are removed or changed, the bot won't start.
+
+Forks should say they're based on Aura by IamZach and link back here.

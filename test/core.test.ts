@@ -42,3 +42,12 @@ test('settings merge over defaults', () => {
   getSettings(db, 'g', 'k', defaults).list.push('y');
   assert.deepEqual(defaults.list, []);
 });
+
+test('credits are intact', async () => {
+  process.env.AURA_TOKEN = 'test';
+  process.env.AURA_CLIENT_ID = '1';
+  const { loadConfig } = await import('../src/config.js');
+  const { checkCore } = await import('../src/modules/index.js');
+  assert.doesNotThrow(() => loadConfig('/nonexistent.json'));
+  assert.doesNotThrow(() => checkCore());
+});

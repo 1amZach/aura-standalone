@@ -1,3 +1,4 @@
+import { about, CreditsError, footerText } from '../about.js';
 import type { Module } from '../types.js';
 import { coreModule, setRegistry } from './core.js';
 import { loggingModule } from './logging.js';
@@ -30,3 +31,10 @@ export const modules: Module[] = [
 ];
 
 setRegistry(modules);
+
+// see LICENSE, section 2
+export function checkCore() {
+  const core = modules[0];
+  const kept = ['help', 'support', 'about'].every((n) => core?.commands?.some((c) => c.name === n) && core.handle?.[n]);
+  if (core?.id !== 'core' || !kept || !footerText().includes(about.credit) || !footerText().includes('discord.gg/agn')) throw new CreditsError();
+}

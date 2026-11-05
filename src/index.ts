@@ -2,13 +2,20 @@ import { ActivityType, Client, Events, GatewayIntentBits, MessageFlags, type Gui
 import { about } from './about.js';
 import { loadConfig } from './config.js';
 import { getSettings, openDb } from './db.js';
-import { modules } from './modules/index.js';
+import { checkCore, modules } from './modules/index.js';
 import { logDefaults } from './modules/logging.js';
 import { moduleEnabled } from './modules/state.js';
 import type { ComponentInteraction, Ctx, LogKind } from './types.js';
 import { errEmbed, respond } from './util.js';
 
-const config = loadConfig();
+let config: ReturnType<typeof loadConfig>;
+try {
+  config = loadConfig();
+  checkCore();
+} catch (e) {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+}
 const db = openDb(config.databasePath, modules.flatMap((m) => (m.schema ? [m.schema] : [])));
 
 const client = new Client({
@@ -77,7 +84,7 @@ client.once(Events.ClientReady, async (c) => {
     ticking = false;
   }, 15_000);
 
-  c.user.setPresence({ activities: [{ name: '/help · discord.gg/agn', type: ActivityType.Watching }] });
+  c.user.setPresence({ activities: [{ name: about.status, type: ActivityType.Watching }] });
   console.log(`Aura Standalone is online as ${c.user.tag} in ${c.guilds.cache.size} server(s).`);
   console.log(`Built by ${about.author}. Need help? ${about.supportUrl}`);
 });

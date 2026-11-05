@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
-import { about } from '../about.js';
+import { about, footerText } from '../about.js';
 import type { Module } from '../types.js';
 import { colors, embed, fail, ok, respond } from '../util.js';
 import { setModuleEnabled } from './state.js';
@@ -29,7 +29,7 @@ const links = () =>
     new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('GitHub').setURL(about.repoUrl),
   );
 
-const footer = { text: `Aura v${about.version} · built by ${about.author} · support at discord.gg/agn` };
+const footer = { text: footerText() };
 
 const commands = [
   new SlashCommandBuilder().setName('ping').setDescription('Check Aura is awake'),

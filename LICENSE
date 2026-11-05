@@ -1,4 +1,4 @@
-MIT License
+MIT License with Attribution
 
 Copyright (c) 2026 IamZach
 
@@ -9,8 +9,23 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
+
+2. Attribution. Any running instance of the Software, modified or not, must
+   keep the original in-app credits visible to its users. That means:
+     a) the /about command, crediting "IamZach" as the original author;
+     b) the /support command, linking to the Astra Gaming Network (AGN)
+        Discord at https://discord.gg/agn;
+     c) the "built by IamZach" footer on /help, /support and /about.
+   You may add your own credits alongside these, but you may not remove,
+   hide, rename or alter the originals, or the checks in the Software that
+   verify them.
+
+3. Any fork or redistribution must state that it is based on Aura by IamZach
+   and link back to https://github.com/1amZach/aura-standalone.
+
+Failure to meet any of these conditions ends the rights granted above.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

@@ -1,5 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
+import { about, CreditsError } from './about.js';
+
+const FINGERPRINT = '430d06f72b78e178559df68a25667187bcafe3cbb67de3a23dd2771c34c9c302';
 
 export interface BotConfig {
   token: string;
@@ -10,6 +14,10 @@ export interface BotConfig {
 }
 
 export function loadConfig(path = process.env.AURA_CONFIG ?? 'config.json'): BotConfig {
+  const { author, credit, supportName, supportUrl, repoUrl, status } = about;
+  const print = createHash('sha256').update([author, credit, supportName, supportUrl, repoUrl, status].join('|')).digest('hex');
+  if (print !== FINGERPRINT) throw new CreditsError();
+
   const file = resolve(path);
   const raw: Partial<BotConfig> = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
   const cfg: BotConfig = {

@@ -1,9 +1,10 @@
 import { REST, Routes } from 'discord.js';
 import { loadConfig } from './config.js';
-import { modules } from './modules/index.js';
+import { checkCore, modules } from './modules/index.js';
 
 export async function deployCommands() {
   const config = loadConfig();
+  checkCore();
   const body = modules.flatMap((m) => m.commands ?? []);
   const names = new Set<string>();
   for (const c of body) {
