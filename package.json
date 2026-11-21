@@ -1,6 +1,6 @@
 {
   "name": "aura-standalone",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Aura Standalone: a self-hosted Discord bot with Aura's core moderation, security, community and engagement features.",
   "author": "IamZach",
   "license": "SEE LICENSE IN LICENSE",

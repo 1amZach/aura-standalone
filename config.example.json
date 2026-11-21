@@ -3,5 +3,7 @@
   "clientId": "YOUR_APPLICATION_ID",
   "devGuildId": "",
   "databasePath": "data/aura.db",
-  "ownerIds": []
+  "ownerIds": [],
+  "updateCheck": true,
+  "autoUpdate": false
 }

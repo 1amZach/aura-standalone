@@ -1,12 +1,12 @@
 export const about = {
   name: 'Aura',
-  version: '1.0.0',
+  version: '1.1.0',
   author: 'IamZach',
   credit: 'built by IamZach',
   supportName: 'Astra Gaming Network (AGN)',
   supportUrl: 'https://discord.gg/agn',
   repoUrl: 'https://github.com/1amZach/aura-standalone',
-  status: '/help · discord.gg/agn',
+  statuses: ['Watching {server}', 'Created by IamZach', 'Support @ .gg/agn'],
 };
 
 export const footerText = () => `Aura v${about.version} · ${about.credit} · support at discord.gg/agn`;

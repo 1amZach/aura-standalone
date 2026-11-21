@@ -1,10 +1,21 @@
 services:
   aura:
-    build: .
+    image: ghcr.io/1amzach/aura-standalone:latest
+    # build: .   # use this instead to build from your own copy
     restart: unless-stopped
     environment:
       AURA_TOKEN: ${AURA_TOKEN}
       AURA_CLIENT_ID: ${AURA_CLIENT_ID}
-      # AURA_DEV_GUILD_ID: ""   # register commands to one server instantly while testing
+      # AURA_DEV_GUILD_ID: ""
     volumes:
       - ./data:/app/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  # checks for a new Aura image every 6 hours and restarts the bot on it
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --cleanup --interval 21600

@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { about, footerText } from '../about.js';
+import { latest } from '../updater.js';
 import type { Module } from '../types.js';
 import { colors, embed, fail, ok, respond } from '../util.js';
 import { setModuleEnabled } from './state.js';
@@ -114,6 +115,7 @@ export const coreModule: Module = {
               { name: 'Uptime', value: `<t:${Math.floor((Date.now() - i.client.uptime) / 1000)}:R>`, inline: true },
               { name: 'Support', value: `[discord.gg/agn](${about.supportUrl})`, inline: true },
             )
+            .addFields(latest ? [{ name: 'Update available', value: `[v${latest.version}](${latest.url}) is out. Ask the bot’s host to update.` }] : [])
             .setFooter(footer),
         ],
         components: [links()],

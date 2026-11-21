@@ -78,11 +78,13 @@ pm2 save
 
 ### Docker
 
+The easiest way. Grab `docker-compose.yml` from this repo, then:
+
 ```bash
 AURA_TOKEN=your-token AURA_CLIENT_ID=your-app-id docker compose up -d
 ```
 
-Data lives in `./data`.
+Data lives in `./data`. The compose file includes [Watchtower](https://containrrr.dev/watchtower/), which checks for a new Aura image every 6 hours and restarts the bot on it, so you're always up to date. Remove the `watchtower` service if you'd rather update by hand (`docker compose pull && docker compose up -d`).
 
 ## Config
 
@@ -95,12 +97,25 @@ Data lives in `./data`.
 | `devGuildId` | `AURA_DEV_GUILD_ID` | register commands to one server only |
 | `databasePath` | `AURA_DB` | defaults to `data/aura.db` |
 | `ownerIds` | `AURA_OWNER_IDS` | comma separated, can manage the security trust list in any server |
+| `updateCheck` | `AURA_UPDATE_CHECK` | check GitHub for new releases (default `true`) |
+| `autoUpdate` | `AURA_AUTO_UPDATE` | install new releases by itself (default `false`) |
 
-## Backups and updates
+## Backups
 
 Everything is in `data/aura.db`. Stop the bot and copy that file to back it up.
 
-To update:
+## Updates
+
+Aura checks this repo for new releases every 6 hours. When one is out, it logs it, shows it in `/about`, and DMs the bot's owner once.
+
+**Automatic:** set `"autoUpdate": true` in `config.json`. When a release comes out, Aura pulls it, installs, builds and restarts itself. A few things to know:
+
+- It needs to be running under something that restarts it, like pm2 (see above) or systemd. Otherwise it updates and asks you to restart.
+- It only works on copies installed with `git clone`, and it won't touch the code if you've edited it.
+- If a new version fails to build, it stays on the version you have and logs why.
+- It follows releases, not every commit, so you only get versions that were tagged as ready.
+
+**By hand:**
 
 ```bash
 git pull

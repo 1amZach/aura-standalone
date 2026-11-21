@@ -51,3 +51,12 @@ test('credits are intact', async () => {
   assert.doesNotThrow(() => loadConfig('/nonexistent.json'));
   assert.doesNotThrow(() => checkCore());
 });
+
+test('version compare', async () => {
+  const { isNewer } = await import('../src/updater.js');
+  assert.equal(isNewer('1.1.0', '1.0.0'), true);
+  assert.equal(isNewer('v1.10.0', '1.9.3'), true);
+  assert.equal(isNewer('1.1.0', '1.1.0'), false);
+  assert.equal(isNewer('1.0.9', '1.1.0'), false);
+  assert.equal(isNewer('2.0', '1.9.9'), true);
+});

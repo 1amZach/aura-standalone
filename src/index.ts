@@ -1,6 +1,7 @@
 import { ActivityType, Client, Events, GatewayIntentBits, MessageFlags, type Guild, type EmbedBuilder, Partials, REST, Routes, type TextBasedChannel } from 'discord.js';
 import { about } from './about.js';
 import { loadConfig } from './config.js';
+import { startUpdater } from './updater.js';
 import { getSettings, openDb } from './db.js';
 import { checkCore, modules } from './modules/index.js';
 import { logDefaults } from './modules/logging.js';
@@ -84,7 +85,18 @@ client.once(Events.ClientReady, async (c) => {
     ticking = false;
   }, 15_000);
 
-  c.user.setPresence({ activities: [{ name: about.status, type: ActivityType.Watching }] });
+  let turn = 0;
+  const rotate = () => {
+    const text = about.statuses[turn++ % about.statuses.length];
+    const server = c.guilds.cache.size === 1 ? c.guilds.cache.first()!.name : `${c.guilds.cache.size} servers`;
+    const watching = text.startsWith('Watching ');
+    c.user.setPresence({
+      activities: [watching ? { name: text.slice(9).replace('{server}', server), type: ActivityType.Watching } : { name: 'Custom Status', state: text, type: ActivityType.Custom }],
+    });
+  };
+  rotate();
+  setInterval(rotate, 20_000);
+  startUpdater(c, config, db);
   console.log(`Aura Standalone is online as ${c.user.tag} in ${c.guilds.cache.size} server(s).`);
   console.log(`Built by ${about.author}. Need help? ${about.supportUrl}`);
 });
