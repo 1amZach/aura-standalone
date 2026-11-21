@@ -34,6 +34,11 @@ create table if not exists devtodo_items (
   unique (guild_id, num)
 );
 create index if not exists devtodo_by_status on devtodo_items (guild_id, status);
+create table if not exists devtodo_dms (
+  guild_id text not null,
+  user_id text not null,
+  primary key (guild_id, user_id)
+);
 `;
 
 export const todoDefaults = {
@@ -115,16 +120,18 @@ const itemsOf = (db: DB, guildId: string) => all<TodoItem>(db, 'select * from de
 function boardPayload(db: DB, guildId: string) {
   const items = itemsOf(db, guildId);
   const active = items.filter((t) => ACTIVE.includes(t.status)).slice(-25);
-  const components = active.length
-    ? [
-        new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-          new StringSelectMenuBuilder()
-            .setCustomId('td:pick')
-            .setPlaceholder('Devs: update an item…')
-            .addOptions(active.map((t) => ({ label: truncate(`#${t.num} ${t.text.replace(/\s+/g, ' ')}`, 100), value: String(t.id), emoji: STATUSES[t.status].emoji }))),
-        ),
-      ]
-    : [];
+  const components: ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] = [];
+  if (active.length)
+    components.push(
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('td:pick')
+          .setPlaceholder('Devs: update an item…')
+          .addOptions(active.map((t) => ({ label: truncate(`#${t.num} ${t.text.replace(/\s+/g, ' ')}`, 100), value: String(t.id), emoji: STATUSES[t.status].emoji }))),
+      ),
+    );
+  if (cfgOf(db, guildId).notify)
+    components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId('td:dm').setLabel('DM me updates on my requests').setEmoji('🔔').setStyle(ButtonStyle.Secondary)));
   return { embeds: renderBoard(items), components, allowedMentions: { parse: [] as [] } };
 }
 
@@ -179,7 +186,7 @@ async function saveFiles(ctx: Ctx, channel: TextChannel, msg: Message, num: numb
 async function setStatus(ctx: Ctx, guild: Guild, item: TodoItem, status: Status, by: string, note?: string | null) {
   run(ctx.db, 'update devtodo_items set status = ?, note = ?, updated_by = ?, updated_at = ? where id = ?', status, note ?? item.note, by, Date.now(), item.id);
   refresh(ctx, guild);
-  if (!cfgOf(ctx.db, guild.id).notify || by === item.author_id) return;
+  if (!cfgOf(ctx.db, guild.id).notify || by === item.author_id || !wantsDms(ctx.db, guild.id, item.author_id)) return;
   const user = await ctx.client.users.fetch(item.author_id).catch(() => null);
   await user
     ?.send({
@@ -191,6 +198,8 @@ async function setStatus(ctx: Ctx, guild: Guild, item: TodoItem, status: Status,
     })
     .catch(() => {});
 }
+
+const wantsDms = (db: DB, guildId: string, userId: string) => !!get(db, 'select 1 from devtodo_dms where guild_id = ? and user_id = ?', guildId, userId);
 
 const statusButtons = (id: number, current: Status) => {
   const keys = Object.keys(STATUSES) as Status[];
@@ -216,7 +225,7 @@ const command = new SlashCommandBuilder()
       .setDescription('Turn a channel into the to-do list')
       .addChannelOption((o) => o.setName('channel').setDescription('The to-do channel').addChannelTypes(ChannelType.GuildText).setRequired(true))
       .addRoleOption((o) => o.setName('dev_role').setDescription('Role that can update items (Manage Server always can)'))
-      .addBooleanOption((o) => o.setName('notify').setDescription('DM people when their item changes status (default on)')),
+      .addBooleanOption((o) => o.setName('notify').setDescription('Show the “DM me updates” button so people can opt in (default on)')),
   )
   .addSubcommand((s) =>
     s
@@ -311,6 +320,19 @@ export const devtodoModule: Module = {
     async td(i, args, ctx) {
       if (!i.inCachedGuild()) return;
       const cfg = cfgOf(ctx.db, i.guildId);
+
+      if (args[0] === 'dm') {
+        const on = !wantsDms(ctx.db, i.guildId, i.user.id);
+        if (on) run(ctx.db, 'insert into devtodo_dms (guild_id, user_id) values (?, ?)', i.guildId, i.user.id);
+        else run(ctx.db, 'delete from devtodo_dms where guild_id = ? and user_id = ?', i.guildId, i.user.id);
+        return ok(
+          i,
+          on
+            ? 'You’ll get a DM whenever one of your requests changes status. Press the button again to stop. Make sure your DMs are open for this server.'
+            : 'Got it, no more DMs about your requests.',
+        );
+      }
+
       if (!isDev(i.member, cfg.devRoleId)) return fail(i, 'Only devs can update items.');
 
       if (args[0] === 'pick' && i.isStringSelectMenu()) {
@@ -369,7 +391,8 @@ export const devtodoModule: Module = {
         const files = await saveFiles(ctx, channel, msg, num).catch(() => null);
         addItem(ctx.db, msg.guildId, msg.author.id, msg.content.trim() || 'See attachments', files, num);
         await msg.react('✅').catch(() => {});
-        await flash(channel, `✅ Added to the list as **#${num}**, thanks <@${msg.author.id}>.`);
+        const hint = cfg.notify && !wantsDms(ctx.db, msg.guildId, msg.author.id) ? ' Press 🔔 on the board to get DMs when it changes.' : '';
+        await flash(channel, `✅ Added to the list as **#${num}**, thanks <@${msg.author.id}>.${hint}`, hint ? 8000 : 6000);
         setTimeout(() => msg.delete().catch(() => {}), 4000);
         refresh(ctx, msg.guild);
       } catch (e) {
