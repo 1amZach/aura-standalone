@@ -13,6 +13,7 @@ import { levelsModule } from './levels.js';
 import { giveawaysModule } from './giveaways.js';
 import { pollsModule } from './polls.js';
 import { suggestionsModule } from './suggestions.js';
+import { itemlogModule } from './itemlog.js';
 
 export const modules: Module[] = [
   coreModule,
@@ -28,6 +29,7 @@ export const modules: Module[] = [
   giveawaysModule,
   pollsModule,
   suggestionsModule,
+  itemlogModule,
 ];
 
 setRegistry(modules);

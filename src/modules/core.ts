@@ -59,6 +59,7 @@ const SETUP_HINTS: Record<string, string> = {
   giveaways: '`/giveaway start`',
   polls: '`/poll create`',
   suggestions: '`/suggestion setup`',
+  itemlog: '`/itemlog setup`',
 };
 
 export const coreModule: Module = {

@@ -22,6 +22,7 @@ Built by **IamZach**. Need help? Come find us in the **Astra Gaming Network (AGN
 | Giveaways | Button entry, requirements, reroll | yes |
 | Polls | Button polls with live results | yes |
 | Suggestions | Voting, staff review, optional threads | no |
+| Given Items Log | Staff log items given to players, with who authorized it and why | no |
 
 Turn things on and off per server with `/module enable` and `/module disable`.
 
@@ -135,6 +136,8 @@ then restart. New tables are created automatically.
 **Polls:** `/poll create|end`
 
 **Suggestions:** `/suggest` `/suggestion setup|approve|deny|consider|implemented`
+
+**Given Items Log:** `/itemlog give|history|remove|setup`
 
 ## Support
 
