@@ -42,3 +42,18 @@ test('transcript lists messages with attachments', () => {
 test('welcome templates turn \\n into new lines', () => {
   assert.equal(unescapeTemplate(' hi\\nthere '), 'hi\nthere');
 });
+
+test('ticket tracker card', async () => {
+  const { trackerEmbed } = await import('../src/modules/tickets.js');
+  const hour = 3_600_000;
+  const t = { id: 1, guild_id: 'g', num: 7, channel_id: '99', opener_id: 'a', reason: '', claimed_by: 'b', claimed_at: hour, status: 'closed' as const, created_at: 0, closed_at: 3 * hour, closed_by: 'b', close_reason: null };
+  const msg = (id: string, bot = false) => ({ author: { id, bot } }) as never;
+  const e = trackerEmbed(t, { name: 'ticket-7-sam', type: 'Support', closerId: 'b', reason: 'sorted', closedAt: 3 * hour, history: [msg('a'), msg('a'), msg('b'), msg('bot', true)] }).toJSON();
+  const field = (n: string) => e.fields!.find((f) => f.name.startsWith(n))!.value;
+  assert.equal(field('Time to claim'), '1h');
+  assert.equal(field('Handled for'), '2h');
+  assert.equal(field('Open for'), '3h');
+  assert.match(field('Members involved'), /<@a> · 2 messages \(opener\)/);
+  assert.match(field('Members involved'), /<@b> · 1 message \(claimed, closed\)/);
+  assert.equal(field('Members involved').includes('bot'), false);
+});

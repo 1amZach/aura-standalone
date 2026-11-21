@@ -17,7 +17,7 @@ Built by **IamZach**. Need help? Come find us in the **Astra Gaming Network (AGN
 | Verification | Button + code verification with an optional minimum account age | no |
 | Welcome | Welcome, leave and DM messages | yes (needs a channel) |
 | Roles | Join roles and button role panels | yes |
-| Tickets | Ticket panel, private channels, claim/close, transcripts | no |
+| Tickets | Ticket panel, private channels, claim/close, transcripts, Ticket Tracker close log | no |
 | Levels | XP, level-up messages, reward roles, leaderboard | yes |
 | Giveaways | Button entry, requirements, reroll | yes |
 | Polls | Button polls with live results | yes |
@@ -126,7 +126,7 @@ then restart. New tables are created automatically.
 
 **Roles:** `/autorole add|remove|list` `/rolepanel create|add|remove|post|list|delete`
 
-**Tickets:** `/tickets setup|show` `/ticket close|add|remove|rename|claim`
+**Tickets:** `/tickets setup|show|tracker` `/ticket close|add|remove|rename|claim`
 
 **Levels:** `/rank` `/leaderboard` `/levels config|reward|ignore|reset` `/xp give|take|set`
 

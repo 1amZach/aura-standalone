@@ -20,7 +20,7 @@ import {
 } from 'discord.js';
 import { all, get, getSettings, run, setSettings, type DB } from '../db.js';
 import type { Ctx, Module } from '../types.js';
-import { colors, embed, fail, ok, respond, truncate, ts } from '../util.js';
+import { colors, embed, fail, fmtDuration, ok, respond, truncate, ts } from '../util.js';
 
 const schema = `
 create table if not exists tickets_tickets (
@@ -31,6 +31,7 @@ create table if not exists tickets_tickets (
   opener_id text not null,
   reason text not null default '',
   claimed_by text,
+  claimed_at integer,
   status text not null default 'open',
   created_at integer not null,
   closed_at integer,
@@ -52,6 +53,7 @@ export const ticketDefaults = {
   panelMessage: 'Click the button below to open a private ticket with the staff team.',
   maxOpen: 1,
   askReason: false,
+  tracker: true,
 };
 type TicketSettings = typeof ticketDefaults;
 
@@ -63,6 +65,7 @@ interface TicketRow {
   opener_id: string;
   reason: string;
   claimed_by: string | null;
+  claimed_at: number | null;
   status: 'open' | 'closed';
   created_at: number;
   closed_at: number | null;
@@ -229,7 +232,7 @@ async function openTicket(ctx: Ctx, guild: Guild, user: User, reason: string): P
 }
 
 async function claimTicket(ctx: Ctx, guild: Guild, t: TicketRow, by: GuildMember) {
-  run(ctx.db, 'update tickets_tickets set claimed_by = ? where id = ?', by.id, t.id);
+  run(ctx.db, 'update tickets_tickets set claimed_by = ?, claimed_at = ? where id = ?', by.id, Date.now(), t.id);
   await ticketLog(
     ctx,
     guild,
@@ -237,6 +240,43 @@ async function claimTicket(ctx: Ctx, guild: Guild, t: TicketRow, by: GuildMember
       .setTitle(`🙋 Ticket #${t.num} claimed`)
       .addFields({ name: 'By', value: `<@${by.id}>`, inline: true }, { name: 'Channel', value: `<#${t.channel_id}>`, inline: true }),
   );
+}
+
+const when = (ms: number) => `${ts(ms, 'f')} (${ts(ms, 'R')})`;
+const took = (from: number, to: number) => fmtDuration(Math.max(60_000, to - from));
+
+export function trackerEmbed(t: TicketRow, o: { name: string; type: string; closerId: string; reason: string; closedAt: number; history: Pick<Message, 'author'>[] }) {
+  const counts = new Map<string, number>();
+  for (const m of o.history) if (!m.author.bot) counts.set(m.author.id, (counts.get(m.author.id) ?? 0) + 1);
+  const people = [...new Set([t.opener_id, ...(t.claimed_by ? [t.claimed_by] : []), o.closerId, ...counts.keys()])];
+  const parts = (id: string) => [id === t.opener_id && 'opener', id === t.claimed_by && 'claimed', id === o.closerId && 'closed'].filter(Boolean).join(', ');
+  const lines = people.map((id) => {
+    const n = counts.get(id) ?? 0;
+    return `<@${id}> · ${n} message${n === 1 ? '' : 's'}${parts(id) ? ` (${parts(id)})` : ''}`;
+  });
+  const claimedAt = t.claimed_by ? t.claimed_at : null;
+  const e = embed(colors.primary)
+    .setTitle('🎫 Ticket Tracker')
+    .setDescription(`**${o.name}** was closed by <@${o.closerId}>.`)
+    .addFields(
+      { name: 'Ticket name', value: `#${o.name}`, inline: true },
+      { name: 'Type', value: o.type, inline: true },
+      { name: 'Ticket ID', value: `\`#${t.num}\` · \`${t.channel_id}\``, inline: true },
+      { name: 'Opened by', value: `<@${t.opener_id}>`, inline: true },
+      { name: 'Opened', value: when(t.created_at), inline: true },
+      { name: 'Claimed by', value: t.claimed_by ? `<@${t.claimed_by}>` : 'Not claimed', inline: true },
+      { name: 'Claimed', value: claimedAt ? when(claimedAt) : '-', inline: true },
+      { name: 'Closed by', value: `<@${o.closerId}>`, inline: true },
+      { name: 'Closed', value: when(o.closedAt), inline: true },
+      { name: 'Time to claim', value: claimedAt ? took(t.created_at, claimedAt) : '-', inline: true },
+      { name: 'Handled for', value: claimedAt ? took(claimedAt, o.closedAt) : '-', inline: true },
+      { name: 'Open for', value: took(t.created_at, o.closedAt), inline: true },
+    )
+    .setFooter({ text: 'Ticket Tracker' })
+    .setTimestamp(o.closedAt);
+  if (o.reason) e.addFields({ name: 'Reason', value: truncate(o.reason, 1024) });
+  e.addFields({ name: `Members involved (${people.length})`, value: truncate(lines.join('\n'), 1024) });
+  return e;
 }
 
 async function closeTicket(ctx: Ctx, guild: Guild, t: TicketRow, by: User, reason: string) {
@@ -251,10 +291,12 @@ async function closeTicket(ctx: Ctx, guild: Guild, t: TicketRow, by: User, reaso
         .catch(() => {});
     }
 
+    const closedAt = Date.now();
     let file: AttachmentBuilder | null = null;
+    let history: Message[] = [];
     if (channel) {
       try {
-        const history = await fetchHistory(channel);
+        history = await fetchHistory(channel);
         const opener = await ctx.client.users.fetch(t.opener_id).catch(() => null);
         const text = formatTranscript(
           [
@@ -280,15 +322,19 @@ async function closeTicket(ctx: Ctx, guild: Guild, t: TicketRow, by: User, reaso
       }
     }
 
-    const e = embed(colors.danger)
-      .setTitle(`🔒 Ticket #${t.num} closed`)
-      .addFields(
-        { name: 'Opened by', value: `<@${t.opener_id}>`, inline: true },
-        { name: 'Closed by', value: `<@${by.id}>`, inline: true },
-        { name: 'Claimed by', value: t.claimed_by ? `<@${t.claimed_by}>` : 'Nobody', inline: true },
-        { name: 'Opened', value: ts(t.created_at, 'f'), inline: true },
-        { name: 'Reason', value: truncate(reason || 'No reason given', 1024) },
-      );
+    const short = () =>
+      embed(colors.danger)
+        .setTitle(`🔒 Ticket #${t.num} closed`)
+        .addFields(
+          { name: 'Opened by', value: `<@${t.opener_id}>`, inline: true },
+          { name: 'Closed by', value: `<@${by.id}>`, inline: true },
+          { name: 'Claimed by', value: t.claimed_by ? `<@${t.claimed_by}>` : 'Nobody', inline: true },
+          { name: 'Opened', value: ts(t.created_at, 'f'), inline: true },
+          { name: 'Reason', value: truncate(reason || 'No reason given', 1024) },
+        );
+    const e = cfgOf(ctx.db, guild.id).tracker
+      ? trackerEmbed(t, { name: channel?.name ?? `ticket-${t.num}`, type: 'Support', closerId: by.id, reason, closedAt, history })
+      : short();
     await ticketLog(ctx, guild, e, file ? [file] : []);
 
     const opener = await ctx.client.users.fetch(t.opener_id).catch(() => null);
@@ -329,7 +375,13 @@ const commands = [
         .addIntegerOption((o) => o.setName('max_open').setDescription('Open tickets allowed per person (default 1)').setMinValue(1).setMaxValue(10))
         .addBooleanOption((o) => o.setName('ask_reason').setDescription('Ask for a short reason before opening')),
     )
-    .addSubcommand((s) => s.setName('show').setDescription('Show the ticket settings')),
+    .addSubcommand((s) => s.setName('show').setDescription('Show the ticket settings'))
+    .addSubcommand((s) =>
+      s
+        .setName('tracker')
+        .setDescription('Turn the Ticket Tracker close log on or off')
+        .addBooleanOption((o) => o.setName('enabled').setDescription('On posts the full card, off posts a short log').setRequired(true)),
+    ),
   new SlashCommandBuilder()
     .setName('ticket')
     .setDescription('Manage the ticket you’re in')
@@ -350,6 +402,11 @@ export const ticketsModule: Module = {
   handle: {
     async tickets(i, { db }) {
       const sub = i.options.getSubcommand();
+      if (sub === 'tracker') {
+        const on = i.options.getBoolean('enabled', true);
+        setSettings(db, i.guildId, 'tickets', ticketDefaults, { tracker: on });
+        return ok(i, on ? 'Closed tickets now get the full Ticket Tracker card in the log.' : 'Closed tickets now get a short log instead of the Ticket Tracker card.');
+      }
       if (sub === 'show') {
         const cfg = cfgOf(db, i.guildId);
         const open = get<{ n: number }>(db, "select count(*) as n from tickets_tickets where guild_id = ? and status = 'open'", i.guildId)?.n ?? 0;
@@ -365,6 +422,7 @@ export const ticketsModule: Module = {
                   `**Panel:** ${cfg.panelChannelId ? `<#${cfg.panelChannelId}>` : 'not posted'}`,
                   `**Open per person:** ${cfg.maxOpen}`,
                   `**Ask for a reason:** ${cfg.askReason ? 'Yes' : 'No'}`,
+                  `**Ticket Tracker log:** ${cfg.tracker ? 'On' : 'Off'}`,
                   `**Open right now:** ${open}`,
                 ].join('\n'),
               ),
@@ -536,6 +594,10 @@ export const ticketsModule: Module = {
     },
   },
   init(ctx) {
+    // older databases don't have claimed_at yet
+    try {
+      ctx.db.exec('alter table tickets_tickets add column claimed_at integer');
+    } catch {}
     ctx.client.on(Events.ChannelDelete, async (channel) => {
       try {
         if (channel.isDMBased() || !ctx.enabled(channel.guild.id, 'tickets')) return;
