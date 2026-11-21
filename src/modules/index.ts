@@ -14,6 +14,7 @@ import { giveawaysModule } from './giveaways.js';
 import { pollsModule } from './polls.js';
 import { suggestionsModule } from './suggestions.js';
 import { itemlogModule } from './itemlog.js';
+import { devtodoModule } from './devtodo.js';
 
 export const modules: Module[] = [
   coreModule,
@@ -30,6 +31,7 @@ export const modules: Module[] = [
   pollsModule,
   suggestionsModule,
   itemlogModule,
+  devtodoModule,
 ];
 
 setRegistry(modules);

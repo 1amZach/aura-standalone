@@ -60,6 +60,7 @@ const SETUP_HINTS: Record<string, string> = {
   polls: '`/poll create`',
   suggestions: '`/suggestion setup`',
   itemlog: '`/itemlog setup`',
+  devtodo: '`/todo setup`',
 };
 
 export const coreModule: Module = {
